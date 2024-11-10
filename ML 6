@@ -1,0 +1,111 @@
+import numpy as np
+import random
+
+# Maze environment (0: empty, -1: wall, 1: goal)
+maze = np.array([
+    [0, 0, 0, 0, 0],
+    [0, -1, -1, 0, -1],
+    [0, 0, 0, 0, 0],
+    [-1, 0, -1, -1, 0],
+    [0, 0, 0, 0, 1]
+])
+
+n_rows, n_cols = maze.shape
+actions = ["up", "down", "left", "right"]
+action_dict = {"up": (-1, 0), "down": (1, 0), "left": (0, -1), "right": (0, 1)}
+
+# Function to print maze with agent's position
+def print_maze(row, col):
+    for r in range(n_rows):
+        row_output = ""
+        for c in range(n_cols):
+            if r == row and c == col:
+                row_output += " A "
+            elif maze[r, c] == -1:
+                row_output += " # "
+            elif maze[r, c] == 1:
+                row_output += " G "
+            else:
+                row_output += " . "
+        print(row_output)
+    print("\n")
+
+# Initialize Q-table with zeros
+Q_table = np.zeros((n_rows * n_cols, len(actions)))
+
+# Hyperparameters
+alpha = 0.1  # Learning rate
+gamma = 0.9  # Discount factor
+epsilon = 1.0  # Exploration rate
+epsilon_decay = 0.99  # Decay factor for exploration
+min_epsilon = 0.1  # Minimum exploration rate
+
+# Helper functions for state management
+def state_to_index(row, col):
+    return row * n_cols + col
+
+def index_to_state(index):
+    return divmod(index, n_cols)
+
+def is_valid_move(row, col):
+    return 0 <= row < n_rows and 0 <= col < n_cols and maze[row, col] != -1
+
+def get_next_state(row, col, action):
+    delta_row, delta_col = action_dict[action]
+    new_row, new_col = row + delta_row, col + delta_col
+    if is_valid_move(new_row, new_col):
+        return new_row, new_col
+    return row, col
+
+def get_reward(row, col):
+    if maze[row, col] == 1:  # Goal reached
+        return 100
+    return -1  # Penalize each step
+
+def choose_action(state_index):
+    if random.uniform(0, 1) < epsilon:
+        return random.choice(range(len(actions)))  # Exploration
+    return np.argmax(Q_table[state_index])  # Exploitation
+
+# Training loop (1000 episodes)
+num_episodes = 1000
+for episode in range(num_episodes):
+    row, col = 0, 0  # Start position
+    state_index = state_to_index(row, col)
+    total_reward = 0
+
+    # Loop until goal is reached
+    while maze[row, col] != 1:
+        action_index = choose_action(state_index)
+        action = actions[action_index]
+        new_row, new_col = get_next_state(row, col, action)
+        new_state_index = state_to_index(new_row, new_col)
+
+        reward = get_reward(new_row, new_col)
+        total_reward += reward
+
+        # Q-learning update rule
+        Q_table[state_index, action_index] = Q_table[state_index, action_index] + \
+            alpha * (reward + gamma * np.max(Q_table[new_state_index]) - Q_table[state_index, action_index])
+
+        row, col = new_row, new_col
+        state_index = new_state_index
+
+    # Decay epsilon
+    epsilon = max(min_epsilon, epsilon * epsilon_decay)
+
+    if episode % 100 == 0:
+        print(f"Episode {episode}, Total Reward: {total_reward}")
+
+print("Training completed!")
+
+# Test the trained agent
+row, col = 0, 0
+while maze[row, col] != 1:
+    state_index = state_to_index(row, col)
+    action_index = np.argmax(Q_table[state_index])
+    action = actions[action_index]
+    row, col = get_next_state(row, col, action)
+    print_maze(row, col)
+
+print("Goal reached!")
