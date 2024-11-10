@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+
+# Fetch the MNIST dataset
+mnist = datasets.fetch_openml("mnist_784", version=1, as_frame=False)
+
+# Get dataset size from user input
+dataset_size = int(input("Enter dataset size (max 70000): "))
+dataset_size = min(dataset_size, 70000)  # Limit dataset size to 70000
+
+# Get test size from user input
+test_size = float(input("Enter the test size (0 to 1): "))
+test_size = max(0.1, min(test_size, 0.3))  # Limit the test size between 0.1 and 0.3
+
+X, y = mnist['data'][:dataset_size], mnist["target"][:dataset_size].astype(np.int64)
+
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+
+# Standardize the data
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Train the SVM classifier
+svm_classifier = SVC(kernel="linear")
+svm_classifier.fit(X_train, y_train)
+
+# Make predictions
+y_pred = svm_classifier.predict(X_test)
+
+# Print confusion matrix and classification report
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Visualize some test images and their predictions
+plt.figure(figsize=(10, 6))
+for i in range(10):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(X_test[i].reshape(28, 28), cmap="gray")
+    plt.title(f"True: {y_test[i]} \nPred: {y_pred[i]}")
+    plt.axis("off")
+plt.tight_layout()
+plt.show()
