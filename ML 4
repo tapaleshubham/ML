@@ -1,0 +1,39 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+
+# Load dataset
+df = pd.read_csv('Iris.csv')
+df.drop('Id', axis=1, inplace=True)
+
+# Check for missing values and unique values
+print(df.info())
+print(df.isnull().sum())
+print(df['Species'].unique())
+
+# Elbow Method to determine the number of clusters
+X = df.iloc[:, 0:4]  # Selecting the features
+sse = []
+
+for k in range(1, 10):
+    km = KMeans(n_clusters=k)
+    km.fit(X)
+    sse.append(km.inertia_)
+
+plt.plot(range(1, 10), sse)
+plt.title('Elbow Method')
+plt.show()
+
+# Fit KMeans with 3 clusters (based on elbow method)
+km = KMeans(n_clusters=3, random_state=0)
+y_means = km.fit_predict(X)
+
+# Visualize the clusters
+plt.scatter(X.iloc[y_means == 0, 2], X.iloc[y_means == 0, 3], color='r', label='Cluster 1')
+plt.scatter(X.iloc[y_means == 1, 2], X.iloc[y_means == 1, 3], color='b', label='Cluster 2')
+plt.scatter(X.iloc[y_means == 2, 2], X.iloc[y_means == 2, 3], color='g', label='Cluster 3')
+plt.legend()
+plt.title('K-Means Clustering (Iris Dataset)')
+plt.show()
