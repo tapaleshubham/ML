@@ -1,0 +1,40 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# Load dataset
+df = pd.read_csv('Wine.csv')
+
+# Separate features and target
+X = df.drop(columns=['Customer_Segment'])
+y = df['Customer_Segment']
+
+# Standardize features
+X_scaled = StandardScaler().fit_transform(X)
+
+# Apply PCA for 2 components
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+# Create a DataFrame with principal components and target
+pca_df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+pca_df['Customer_Segment'] = y
+
+# Plot the PCA-transformed data
+plt.figure(figsize=(10, 6))
+colors = {1: 'blue', 2: 'red', 3: 'green'}
+
+for segment in colors:
+    plt.scatter(
+        pca_df[pca_df['Customer_Segment'] == segment]['PC1'],
+        pca_df[pca_df['Customer_Segment'] == segment]['PC2'],
+        color=colors[segment], label=f'Segment {segment}', alpha=0.7
+    )
+
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.legend()
+plt.title('PCA: Wine Dataset')
+plt.show()
